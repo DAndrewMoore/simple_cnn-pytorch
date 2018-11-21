@@ -1,14 +1,14 @@
 import os
 import time
-import datetime
+import time
 
 import torch
 import numpy as np
 import torch.nn.functional as F
 from torch.utils import data
 from data_loader import DL
-# from model import Classifier
-from vgg import Classifier
+from model import Classifier
+# from vgg import Classifier
 # from test_model import Classifier
 
 import pdb
@@ -21,9 +21,9 @@ save_dir = 'epochs'
 finl_sve = os.path.join(save_dir, 'comp.model')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 img_size = 512
-num_chan = 3
+num_chan = 1
 l_r = 1e-4
-batch_size = 1
+batch_size = 16
 num_epochs = 500
 ########################
 
@@ -59,7 +59,8 @@ def calcGlobalF1():
 def save_epoch(model, save_dir, epoch_num, cur_loss):
     torch.save(model, os.path.join(save_dir, str(epoch_num)+'.model'))
     target = open(os.path.join(save_dir, 'loss_list.tsv'), 'w+')
-    target.write('%d\t%.3f\n' % (epoch_num, cur_loss))
+    strTime = '_'.join([time.strftime('%Y-%m-%d'), time.strftime('%H:%M:%S')])
+    target.write('%s\t%d\t%.3f\n' % (strTime, epoch_num, cur_loss))
     target.close()
 
 def calc_precision(tp, fp):
@@ -69,9 +70,7 @@ def calc_recall(tp, fn):
     return tp / (tp + fn)
 
 def calc_f1(tp, tn, fp, fn):
-    prec = calc_precision(tp, fp)
-    recc = calc_recall(tp, fn)
-    return 2 * ((prec * recc) / (prec + recc))
+    return (2 * tp) / (2 * tp + fn + fp)
 
 def main():
     # Set up data loader
@@ -85,65 +84,41 @@ def main():
                                 batch_size=batch_size,
                                 shuffle=False,num_workers=4)
     # Set up the classifier
-    mdl = Classifier().to(device)
+    mdl = Classifier(num_chan=num_chan).to(device)
     # Set up loss function
     loss_func = torch.nn.BCEWithLogitsLoss()
     # Set up the optimizer
-    optim = torch.optim.Adam(mdl.parameters())
+    optim = torch.optim.Adam(mdl.parameters(), lr=l_r)
     for epoch in range(num_epochs):
-        # For per batch training stats
-        run_loss = 0 # running loss, resets at 100
-        num_test = 0 # number of tests, resets at 100
-        out_iter = 0 # current output set per epoch
-        start_time = time.time()
-        # For per epoch training stats
-        tot_test = 0
-        tot_loss = 0
         # Creates a training set iterator
         train_iter = iter(tr_loader)
         for idx, dat in enumerate(train_iter):
-            optim.zero_grad()
+            if idx >= 5000:
+                break
             pics = dat[0].to(device).float()
             clss = dat[1].to(device).float()
             out = mdl(pics)
-            updateCounts(out, clss)
+            optim.zero_grad()
             loss = loss_func(out, clss)
             loss.backward()
-            run_loss += loss.item()
-            tot_loss += loss.item()
             optim.step()
-            num_test += 1
-            tot_test += 1
-            if num_test == 100:
-                out_iter += 1
-                f1_tmp = calcGlobalF1()
-                print('[%03d-%05d] :: %.3f :: %.3f :: %03d' % (epoch, out_iter, run_loss / num_test, f1_tmp, time.time() - start_time))
-                run_loss = 0
-                num_test = 0
-                start_time = time.time()
-        save_epoch(mdl, os.path.join(save_dir), epoch, tot_loss / tot_test)
+            if (idx + 1) % 2000 == 0:
+                print('[%3d-%05d] Training' % (epoch, idx+1))
+        # save_epoch(mdl, os.path.join(save_dir), epoch, -1) # tot_loss / tot_test)
         # Creates a test set iterator
         valid_iter = iter(te_loader)
-        tp, tn, fp, fn = [0] * 4
+        run_loss = 0
         with torch.no_grad():
             for idx, dat in enumerate(valid_iter):
+                if idx >= 2000:
+                    break
                 pics = dat[0].to(device).float()
-                clss = dat[1].numpy()
+                clss = dat[1].to(device).float()
                 out = mdl(pics)
-                out = ((out.data.cpu().numpy() + 1) / 2) >= 0.5
-                for cur_b in range(batch_size):
-                    for cur_idx in range(num_class):
-                        if clss[cur_b][cur_idx] == out[cur_b][cur_idx]:
-                            if clss[cur_b][cur_idx] == 1:
-                                tp += 1
-                            else:
-                                tn += 1
-                        elif clss[cur_b][cur_idx] == 1:
-                            fn += 1
-                        else:
-                            fp += 1
-        f1_measure = calc_f1(tp, tn, fp, fn)
-        print('[%03d] :: f1_measure :: %.3f' % (epoch, f1_measure))
+                run_loss += F.binary_cross_entropy_with_logits(out, clss).item()
+                if (idx + 1) % 2000 == 0:
+                    print('[%3d-%05d] Validation' % (epoch, idx+1))
+        print('[%03d] :: %.5f' % (epoch, run_loss / len(te_loader)))
     torch.save(mdl, finl_sve)
 
 
