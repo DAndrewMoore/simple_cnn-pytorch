@@ -8,7 +8,7 @@ class Classifier(nn.Module):
 	a lower budget GPU. The original ConvNet for size 512 image would require a
 	first FC layer of size 512*(16^2). With the current setup, the first FC layer
 	only requires a size of 512*4*4."""
-	def __init__(self):
+	def __init__(self, num_chan=3):
 		super(Classifier, self).__init__()
 		# Convolutional layers
 		def makeConvLayers(input, output):
@@ -19,7 +19,7 @@ class Classifier(nn.Module):
 			return layers
 		# Feature construction
 		featLayers = []
-		featLayers += [*makeConvLayers(3, 64)]
+		featLayers += [*makeConvLayers(num_chan, 64)]
 		featLayers += [*makeConvLayers(64, 64)]
 		featLayers.append(nn.MaxPool2d(kernel_size=(2,2), stride=2))
 		featLayers += [*makeConvLayers(64, 128)]
