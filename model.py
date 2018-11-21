@@ -1,8 +1,10 @@
 import torchvision
 import torch.nn as nn
 
+import pdb
+
 class Classifier(nn.Module):
-	def __init__(self):
+	def __init__(self, num_chan=3):
 		super(Classifier, self).__init__()
 		# Convolutional layer maker
 		def makeConvLayers(in_ch, out_ch):
@@ -19,21 +21,21 @@ class Classifier(nn.Module):
 			return fcnLayers
 		# Make feature extraction layers
 		features = []
-		features += [*makeConvLayers(3, 64)]
+		features += [*makeConvLayers(num_chan, 8)]
+		features += [*makeConvLayers(8, 16)]
+		features += [*makeConvLayers(16, 32)]
+		features += [*makeConvLayers(32, 64)]
 		features += [*makeConvLayers(64, 128)]
 		features += [*makeConvLayers(128, 128)]
-		features += [*makeConvLayers(128, 256)]
-		features += [*makeConvLayers(256, 256)]
-		features += [*makeConvLayers(256, 512)]
 		self.features = nn.Sequential(*features)
 		# Make fully connected layers
 		fcnLayers = []
-		fcnLayers += [*makeFCNlayers(8192, 2048)]
-		fcnLayers += [*makeFCNlayers(2048, 512)]
+		fcnLayers += [*makeFCNlayers(2048, 1024)]
+		fcnLayers += [*makeFCNlayers(1024, 512)]
 		fcnLayers.append(nn.Linear(512, 28, bias=False))
 		self.fc = nn.Sequential(*fcnLayers)
 
 	def forward(self, x):
 		feats = self.features(x)
-		preds = self.fc(feats.view(x.size(0), -1))
-		return preds
+		feats = feats.view(x.size(0), -1)
+		return self.fc(feats)
