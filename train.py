@@ -83,6 +83,8 @@ def main():
     te_loader = data.DataLoader(dataset=validate,
                                 batch_size=batch_size,
                                 shuffle=False,num_workers=4)
+    tr_btch_interval = len(tr_loader) // 4
+    te_btch_interval = len(te_loader) // 4
     # Set up the classifier
     mdl = Classifier(num_chan=num_chan).to(device)
     # Set up loss function
@@ -91,10 +93,9 @@ def main():
     optim = torch.optim.Adam(mdl.parameters(), lr=l_r)
     for epoch in range(num_epochs):
         # Creates a training set iterator
+        print('[%03d] Training...\t' % epoch, end=' ', flush=True)
         train_iter = iter(tr_loader)
         for idx, dat in enumerate(train_iter):
-            if idx >= 5000:
-                break
             pics = dat[0].to(device).float()
             clss = dat[1].to(device).float()
             out = mdl(pics)
@@ -102,23 +103,24 @@ def main():
             loss = loss_func(out, clss)
             loss.backward()
             optim.step()
-            if (idx + 1) % 2000 == 0:
-                print('[%3d-%05d] Training' % (epoch, idx+1))
+            if (idx + 1) % tr_btch_interval == 0:
+                cur_per = ((idx +1) // tr_btch_interval) * 25
+                print('%3d%%' % (cur_per) , end=' ', flush=True)
         # save_epoch(mdl, os.path.join(save_dir), epoch, -1) # tot_loss / tot_test)
         # Creates a test set iterator
-        valid_iter = iter(te_loader)
+        print('\n[%03d] Validating...\t' % epoch, end=' ', flush=True)
         run_loss = 0
+        valid_iter = iter(te_loader)
         with torch.no_grad():
             for idx, dat in enumerate(valid_iter):
-                if idx >= 2000:
-                    break
                 pics = dat[0].to(device).float()
                 clss = dat[1].to(device).float()
                 out = mdl(pics)
                 run_loss += F.binary_cross_entropy_with_logits(out, clss).item()
-                if (idx + 1) % 2000 == 0:
-                    print('[%3d-%05d] Validation' % (epoch, idx+1))
-        print('[%03d] :: %.5f' % (epoch, run_loss / len(te_loader)))
+                if (idx + 1) % te_btch_interval == 0:
+                    cur_per = ((idx +1) // te_btch_interval) * 25
+                    print('%3d%%' % (cur_per), end=' ', flush=True)
+        print('\n[%03d] :: %.5f' % (epoch, run_loss / len(te_loader)))
     torch.save(mdl, finl_sve)
 
 
