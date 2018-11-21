@@ -1,6 +1,8 @@
 import torchvision
 import torch.nn as nn
 
+import pdb
+
 class Classifier(nn.Module):
 	"""VGG slightly with altered kernel_size, stride, and padding to accomidate
 	a lower budget GPU. The original ConvNet for size 512 image would require a
@@ -11,7 +13,8 @@ class Classifier(nn.Module):
 		# Convolutional layers
 		def makeConvLayers(input, output):
 			layers = []
-			layers.append(nn.Conv2d(input, output, kernel_size=5, stride=1, padding=0, bias=False))
+			layers.append(nn.Conv2d(input, output,
+				kernel_size=3, stride=1, padding=1, bias=False))
 			layers.append(nn.ReLU(inplace=True))
 			return layers
 		# Feature construction
@@ -37,7 +40,8 @@ class Classifier(nn.Module):
 		self.features = nn.Sequential(*featLayers)
 		# Classifier Construction
 		classLayers = []
-		classLayers.append(nn.Linear(8192, 4096))
+		# Input linear layer is (image size) / 2^(# of MaxPool2d layers)
+		classLayers.append(nn.Linear(512//2**5, 4096))
 		classLayers.append(nn.Linear(4096, 4096))
 		classLayers.append(nn.Linear(4096, 28))
 		# The final softmax layer can't be used since
