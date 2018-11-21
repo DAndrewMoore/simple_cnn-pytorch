@@ -4,7 +4,7 @@ import torch.nn as nn
 class Classifier(nn.Module):
 	"""VGG slightly with altered kernel_size, stride, and padding to accomidate
 	a lower budget GPU. The original ConvNet for size 512 image would require a
-	first FC layer of size 512*21*21. With the current setup, the first FC layer
+	first FC layer of size 512*(16^2). With the current setup, the first FC layer
 	only requires a size of 512*4*4."""
 	def __init__(self):
 		super(Classifier, self).__init__()
