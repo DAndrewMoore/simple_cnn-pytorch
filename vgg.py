@@ -14,7 +14,7 @@ class Classifier(nn.Module):
 		def makeConvLayers(input, output):
 			layers = []
 			layers.append(nn.Conv2d(input, output,
-				kernel_size=3, stride=1, padding=1, bias=False))
+				kernel_size=5, stride=1, padding=0, bias=False))
 			layers.append(nn.ReLU(inplace=True))
 			return layers
 		# Feature construction
@@ -41,7 +41,7 @@ class Classifier(nn.Module):
 		# Classifier Construction
 		classLayers = []
 		# Input linear layer is (image size) / 2^(# of MaxPool2d layers)
-		classLayers.append(nn.Linear(512//2**5, 4096))
+		classLayers.append(nn.Linear(8192, 4096))
 		classLayers.append(nn.Linear(4096, 4096))
 		classLayers.append(nn.Linear(4096, 28))
 		# The final softmax layer can't be used since
