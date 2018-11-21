@@ -9,6 +9,7 @@ from torch.utils import data
 from data_loader import DL
 # from model import Classifier
 from vgg import Classifier
+# from test_model import Classifier
 
 import pdb
 
