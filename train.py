@@ -7,7 +7,8 @@ import numpy as np
 import torch.nn.functional as F
 from torch.utils import data
 from data_loader import DL
-from model import Classifier
+# from model import Classifier
+from vgg import Classifier
 
 import pdb
 
@@ -32,7 +33,7 @@ def resetGlobalCounts():
 
 def updateCounts(pred, lbls):
     global t_p, t_n, f_p, f_n
-    pred = ((pred.data.cpu().numpy() + 1) / 2) >= 0.5
+    pred = np.round(pred.detach().cpu().numpy())
     lbls = lbls.data.cpu().numpy()
     for cur_btch in range(batch_size):
         cur_btch_lbls = lbls[cur_btch]
@@ -123,22 +124,23 @@ def main():
         # Creates a test set iterator
         valid_iter = iter(te_loader)
         tp, tn, fp, fn = [0] * 4
-        for idx, dat in enumerate(valid_iter):
-            pics = dat[0].to(device).float()
-            clss = dat[1].numpy()
-            out = mdl(pics)
-            out = ((out.data.cpu().numpy() + 1) / 2) >= 0.5
-            for cur_b in range(batch_size):
-                for cur_idx in range(num_class):
-                    if clss[cur_b][cur_idx] == out[cur_b][cur_idx]:
-                        if clss[cur_b][cur_idx] == 1:
-                            tp += 1
+        with torch.no_grad():
+            for idx, dat in enumerate(valid_iter):
+                pics = dat[0].to(device).float()
+                clss = dat[1].numpy()
+                out = mdl(pics)
+                out = ((out.data.cpu().numpy() + 1) / 2) >= 0.5
+                for cur_b in range(batch_size):
+                    for cur_idx in range(num_class):
+                        if clss[cur_b][cur_idx] == out[cur_b][cur_idx]:
+                            if clss[cur_b][cur_idx] == 1:
+                                tp += 1
+                            else:
+                                tn += 1
+                        elif clss[cur_b][cur_idx] == 1:
+                            fn += 1
                         else:
-                            tn += 1
-                    elif clss[cur_b][cur_idx] == 1:
-                        fn += 1
-                    else:
-                        fp += 1
+                            fp += 1
         f1_measure = calc_f1(tp, tn, fp, fn)
         print('[%03d] :: f1_measure :: %.3f' % (epoch, f1_measure))
     torch.save(mdl, finl_sve)
