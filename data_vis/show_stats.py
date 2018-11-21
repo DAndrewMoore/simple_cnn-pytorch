@@ -4,13 +4,12 @@ import matplotlib.pyplot as plt
 
 ###############################
 # Params
-train_fp = 'train.csv'
+train_fp = '..\\data\\train.csv'
 ###############################
 
 def readTrainingSet(train_fp):
 	target = open(train_fp, 'r')
 	target.readline()
-
 	data = []
 	for line in target:
 		clss = np.zeros(28)
@@ -22,6 +21,30 @@ def readTrainingSet(train_fp):
 		data.append(clss)
 	target.close()
 	return data
+
+def readTrainingSetDict(train_fp):
+	target = open(train_fp, 'r')
+	target.readline()
+	data = {}
+	for line in target:
+		clss = np.zeros(28)
+		x = line.strip().split(',')
+		fname = x[0].strip()
+		cls_lst = x[1].strip().split(' ')
+		for num in cls_lst:
+			clss[int(num)] = 1
+		data[fname] = clss
+	target.close()
+	return data, list(data.keys())
+
+def createDiagonal(n):
+	x = np.zeros([n, n])
+	for i in range(n):
+		x[n][n] = 1
+	return x
+
+# def getSingleClassFilenames(dat_dict, key_lst, diag):
+#
 
 def getClassCounts(data):
 	class_count = np.zeros(28)
@@ -67,6 +90,8 @@ def writeCombinationTsv(kvPair, fp):
 		key_str = padOutput('\t'.join(key.split('_')), numTabs)
 		target.write('%s\t%d\n' % (key_str, kvPair[key]))
 	target.close()
+
+
 
 class_base = np.arange(28)
 data = readTrainingSet(train_fp)
