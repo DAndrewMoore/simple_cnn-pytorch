@@ -40,7 +40,9 @@ class Classifier(nn.Module):
 		classLayers.append(nn.Linear(8192, 4096))
 		classLayers.append(nn.Linear(4096, 4096))
 		classLayers.append(nn.Linear(4096, 28))
-		classLayers.append(nn.Softmax(dim=1))
+		# The final softmax layer can't be used since
+		# there can be more than a single class per instance
+		# classLayers.append(nn.Softmax(dim=1))
 		self.fc = nn.Sequential(*classLayers)
 
 
