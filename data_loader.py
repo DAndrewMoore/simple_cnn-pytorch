@@ -4,13 +4,13 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
+from utils import conv2dense
 
 class DL(Dataset):
 	def __init__(self, input_dir, trORte):
 		self.convToTensor = ToTensor()
 		csv_doc = os.path.join(input_dir, trORte + '.csv')
 		self.pic_dir = os.path.join(input_dir, trORte)
-		self.colors = ['_red.png', '_blue.png', '_yellow.png']
 		target = open(csv_doc, 'r')
 		self.train_set = []
 		target.readline()
@@ -28,9 +28,21 @@ class DL(Dataset):
 		im = Image.open(os.path.join(self.pic_dir, filename + '_green.png'))
 		im = self.convToTensor(im)
 		# Set class values
-		cls = np.zeros(28)
-		for i in list(map(int, row[1].split(' '))):
-			cls[i] = 1
+		cls = conv2dense(row[1])
 		cls = torch.from_numpy(cls).float()
 		return im, cls
-# 04c49f8c-bba1-11e8-b2b9-ac1f6b6435d0_yellow.png
+
+class testDL(Dataset):
+	def __init__(self, input_dir, trORte):
+		self.convToTensor = ToTensor()
+		self.pic_dir = os.path.join(input_dir, trORte)
+		self.pic_list = [f for f in os.listdir(self.pic_dir) if '_green' in f]
+
+	def __len__(self):
+		return len(self.pic_list)
+
+	def __getitem__(self, idx):
+		fpath = os.path.join(self.pic_dir, self.pic_list[idx])
+		im = Image.open(fpath)
+		im = self.convToTensor(im)
+		return im, self.pic_list[idx].replace('_green.png', '')
