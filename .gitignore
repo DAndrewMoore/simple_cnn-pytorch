@@ -3,3 +3,4 @@ data/**
 data_vis/output/**
 epochs/**
 test_bench/**
+test_results.csv
