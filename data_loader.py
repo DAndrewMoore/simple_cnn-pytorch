@@ -7,8 +7,10 @@ from torchvision.transforms import ToTensor
 from utils import conv2dense
 
 class DL(Dataset):
+	# TODO implement channel rotation and flipping
 	def __init__(self, input_dir, trORte):
 		self.convToTensor = ToTensor()
+		self.colors = ['_green.png', '_blue.png', '_red.png', '_yellow.png']
 		csv_doc = os.path.join(input_dir, trORte + '.csv')
 		self.pic_dir = os.path.join(input_dir, trORte)
 		target = open(csv_doc, 'r')
@@ -25,12 +27,15 @@ class DL(Dataset):
 		# Filename[0]; Classes[1].split(' ')
 		row = self.train_set[idx]
 		filename = row[0]
-		im = Image.open(os.path.join(self.pic_dir, filename + '_green.png'))
-		im = self.convToTensor(im)
+		img_tnsr = np.zeros([4, 512, 512])
+		for idx, c in enumerate(self.colors):
+			tmp_im = Image.open(os.path.join(self.pic_dir, filename+c))
+			img_tnsr[idx] = np.asarray(tmp_im)
+		img_tnsr = torch.from_numpy(img_tnsr).float()
 		# Set class values
 		cls = conv2dense(row[1])
 		cls = torch.from_numpy(cls).float()
-		return im, cls
+		return img_tnsr, cls
 
 class testDL(Dataset):
 	def __init__(self, input_dir, trORte):
