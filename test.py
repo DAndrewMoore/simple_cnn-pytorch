@@ -12,8 +12,8 @@ import pdb
 ########################
 # Params
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+data_dir = 'D:\\data'
 epoch_dir='epochs'
-data_dir = 'data'
 results_fname = 'test_results.csv'
 num_class=28
 num_chan=1

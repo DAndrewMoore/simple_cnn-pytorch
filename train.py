@@ -16,12 +16,12 @@ import pdb
 ###################
 # Params
 num_class = 28
-data_dir = 'data'
+data_dir = 'D:\\data'
 save_dir = 'epochs'
 finl_sve = os.path.join(save_dir, 'comp.model')
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 img_size = 512
-num_chan = 1
+num_chan = 4
 l_r = 1e-4
 batch_size = 16
 num_epochs = 500
@@ -85,7 +85,7 @@ def main():
                 if (idx + 1) % te_btch_interval == 0:
                     cur_per = ((idx +1) // te_btch_interval) * 25
                     print('%4d%%' % (cur_per), end='', flush=True)
-        print('\t%.5f' % (run_loss / len(te_loader)))
+        print('\t\t%.5f' % (run_loss / len(te_loader)))
         save_epoch(mdl, os.path.join(save_dir), epoch, run_loss / len(te_loader)) # tot_loss / tot_test)
     torch.save(mdl, finl_sve)
 
