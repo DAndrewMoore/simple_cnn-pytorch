@@ -61,3 +61,8 @@ def write_output(fnames, pred_arr, outpath):
             pred_sprse_str = '0'
         target.write('%s,%s\n' % (file, pred_sprse_str))
     target.close()
+
+def calc_output_size(h_w, padding, kernel_size, stride):
+    h = (h_w[0] + 2*padding[0] - kernel_size[0]) // stride[0] + 1
+    w = (h_w[1] + 2*padding[1] - kernel_size[1]) // stride[1] + 1
+    return (h, w)
